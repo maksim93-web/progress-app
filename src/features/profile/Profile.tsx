@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { Check, Download, Plus, Share, Smartphone, Upload, UserRound } from 'lucide-react';
 import { useApp } from '../../app/context';
 import { navigate } from '../../app/router';
-import { Button, Card, Field, PageTitle, Screen, SectionTitle, Sheet, cx, inputCls, toast } from '../../ui/kit';
+import { Button, Card, Field, Hero, Screen, SectionTitle, Sheet, cx, inputCls, toast } from '../../ui/kit';
 import { db } from '../../db/database';
 import { createProfile, setActiveProfile, updateProfile } from '../../services/profile';
 import { exportBackup, importBackup, parseBackup } from '../../services/backup';
@@ -22,7 +22,7 @@ export function Profile() {
 
   return (
     <Screen>
-      <PageTitle>Профиль</PageTitle>
+      <Hero title="Профиль" subtitle="Данные хранятся на этом устройстве" icon={<UserRound size={18} />} photo="bench" height={190} />
       <Card className="flex items-center gap-4">
         <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-[#8a72ff] to-[#4f7dff] text-[22px] font-bold">{profile.name.slice(0, 1).toUpperCase()}</div>
         <div className="min-w-0 flex-1">

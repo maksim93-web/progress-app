@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { ChevronRight, History as HistoryIcon } from 'lucide-react';
 import { useApp } from '../../app/context';
 import { navigate } from '../../app/router';
-import { Empty, PageTitle, Pill, Screen, TopBar } from '../../ui/kit';
+import { Empty, Hero, Pill, Screen, TopBar } from '../../ui/kit';
 import { loadDataset } from '../../services/dataset';
 import { loadSessionBundle } from '../../services/workout';
 import { formatDateLong, formatDuration, parseISODate, WEEKDAYS_SHORT } from '../../lib/dates';
@@ -27,7 +27,7 @@ export function History() {
 
   return (
     <Screen>
-      <PageTitle sub={sessions.length ? `${sessions.length} завершённых тренировок` : undefined}>История</PageTitle>
+      <Hero title="История" subtitle={sessions.length ? `${sessions.length} завершённых тренировок` : "Пока пусто"} icon={<HistoryIcon size={18} />} photo="plates" height={200} />
       {sessions.length === 0 && <Empty icon={<HistoryIcon />} title="История пуста" text="Здесь появятся завершённые тренировки с подходами, оценками и изменениями весов." />}
       {[...groups.entries()].map(([month, list]) => (
         <div key={month} className="mb-5">

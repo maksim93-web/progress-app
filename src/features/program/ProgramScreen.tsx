@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { Archive, ArrowDown, ArrowUp, CalendarDays, Copy, FilePlus2, History as HistoryIcon, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useApp } from '../../app/context';
 import { navigate } from '../../app/router';
-import { Button, Card, Field, PageTitle, Pill, Screen, Segmented, SectionTitle, Sheet, Stepper, cx, inputCls, toast } from '../../ui/kit';
+import { Button, Card, Field, Hero, Pill, Screen, Segmented, SectionTitle, Sheet, cx, inputCls, toast } from '../../ui/kit';
 import {
   activateProgram,
   addDay,
@@ -34,7 +34,7 @@ export function ProgramScreen({ tab }: { tab: 'structure' | 'plan' }) {
 
   return (
     <Screen>
-      <PageTitle sub={program?.name}>Программа</PageTitle>
+      <Hero title="Программа" subtitle={program?.name} icon={<CalendarDays size={18} />} photo="dumbbells" height={200} />
       <Segmented
         className="mb-5"
         value={tab}
@@ -115,14 +115,12 @@ function Structure({ bundle, profileId, defaultStepG }: { bundle: ProgramBundle;
       <Card className="p-4" onClick={() => setMetaOpen(true)}>
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[18px] font-semibold">{program.name}</div>
-            <div className="truncate text-[14px] text-ink-2">{program.goal}</div>
+            <div className="truncate text-[20px] font-bold">{program.name}</div>
           </div>
           <Pencil size={17} className="mt-1 text-ink-3" />
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
           <Pill tone="accent">{program.daysPerWeek} трен. в неделю</Pill>
-          <Pill>Цикл {program.cycleWeeks} нед.</Pill>
           <Pill>Старт {formatDateLong(program.startDate)}</Pill>
         </div>
       </Card>
@@ -342,8 +340,6 @@ function Structure({ bundle, profileId, defaultStepG }: { bundle: ProgramBundle;
 function MetaSheet({ open, onClose, bundle }: { open: boolean; onClose: () => void; bundle: ProgramBundle }) {
   const p = bundle.program;
   const [name, setName] = useState(p.name);
-  const [goal, setGoal] = useState(p.goal);
-  const [cycle, setCycle] = useState(p.cycleWeeks);
   const [start, setStart] = useState(p.startDate);
   return (
     <Sheet open={open} onClose={onClose} title="Настройки программы">
@@ -351,20 +347,13 @@ function MetaSheet({ open, onClose, bundle }: { open: boolean; onClose: () => vo
         <Field label="Название">
           <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
-        <Field label="Цель">
-          <input className={inputCls} value={goal} onChange={(e) => setGoal(e.target.value)} />
-        </Field>
-        <div>
-          <div className="mb-1.5 px-1 text-[13px] font-medium text-ink-2">Продолжительность цикла</div>
-          <Stepper value={cycle} min={1} max={52} label="недель" onChange={setCycle} />
-        </div>
-        <Field label="Дата начала" hint="Влияет на нумерацию недель в плане">
+        <Field label="Дата начала" hint="От неё считаются недели в плане">
           <input type="date" className={inputCls} value={start} onChange={(e) => e.target.value && setStart(e.target.value)} />
         </Field>
         <Button
           disabled={!name.trim()}
           onClick={async () => {
-            await updateProgramMeta(p.id, { name: name.trim(), goal: goal.trim(), cycleWeeks: cycle, startDate: start });
+            await updateProgramMeta(p.id, { name: name.trim(), startDate: start });
             onClose();
           }}
         >

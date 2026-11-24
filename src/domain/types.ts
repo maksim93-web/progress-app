@@ -222,6 +222,16 @@ export interface ProgramChange {
   description: string;
 }
 
+/** Разовый перенос тренировки конкретной недели на другую дату (расписание не меняется) */
+export interface WorkoutMove {
+  id: ID;
+  programId: ID;
+  dayId: ID;
+  weekIndex: number;
+  date: ISODate;
+  createdAt: ISODateTime;
+}
+
 export interface MetaRecord {
   key: string;
   value: unknown;

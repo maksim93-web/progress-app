@@ -12,21 +12,20 @@ const TABS = [
 
 export function TabBar({ active }: { active: string }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[520px] border-t border-line bg-[#0c0c12]/85 backdrop-blur-xl" style={{ paddingBottom: 'var(--safe-bottom)' }}>
-      <div className="flex h-[var(--tabbar-h)] items-stretch">
+    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[520px] px-3" style={{ paddingBottom: 'calc(var(--safe-bottom) + 8px)' }}>
+      <div className="glass flex h-[var(--tabbar-h)] items-stretch rounded-[26px] bg-[#101018]/80 px-1 shadow-[0_-10px_40px_-10px_rgb(0_0_0/0.8)]">
         {TABS.map(({ key, label, icon: Icon }) => {
           const on = active === key;
           return (
             <button
               key={key}
               onClick={() => navigate('/' + key)}
-              className={cx('flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition', on ? 'text-[#a99bff]' : 'text-ink-3 active:text-ink-2')}
+              className={cx('relative flex flex-1 flex-col items-center justify-center gap-1 text-[10.5px] font-semibold transition', on ? 'text-accent-3' : 'text-ink-3 active:text-ink-2')}
               aria-current={on ? 'page' : undefined}
             >
-              <span className={cx('grid h-8 w-12 place-items-center rounded-full transition', on && 'bg-accent-soft')}>
-                <Icon size={21} strokeWidth={on ? 2.3 : 1.9} />
-              </span>
-              {label}
+              {on && <span className="absolute top-1.5 h-9 w-12 rounded-2xl bg-accent/20 blur-[1px]" />}
+              <Icon size={22} strokeWidth={on ? 2.4 : 1.9} className={cx('relative', on && 'drop-shadow-[0_0_8px_rgb(124_92_255/0.9)]')} />
+              <span className="relative">{label}</span>
             </button>
           );
         })}

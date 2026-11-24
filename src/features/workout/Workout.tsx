@@ -3,7 +3,11 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import {
   AlertTriangle,
   ArrowRight,
+  BicepsFlexed,
   Check,
+  ChevronLeft,
+  Dumbbell,
+  Target,
   ChevronRight,
   CircleHelp,
   Flame,
@@ -20,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../app/context';
 import { navigate } from '../../app/router';
-import { Button, IconButton, Pill, Screen, Sheet, Stepper, Toggle, TopBar, WeightInput, cx, toast } from '../../ui/kit';
+import { Button, Hero, IconButton, PHOTOS, Pill, Screen, Segments, Sheet, Stepper, Toggle, TopBar, WeightInput, cx, toast } from '../../ui/kit';
 import {
   abandonSession,
   addSet,
@@ -235,35 +239,38 @@ function ExerciseRunner({ bundle }: { bundle: SessionBundle }) {
 
   return (
     <Screen tabbar={false}>
-      <TopBar
-        onBack={() => navigate('/')}
-        title={`${session.dayLetterSnapshot} · ${session.dayNameSnapshot}`}
-        subtitle={`Упражнение ${index + 1} из ${exercises.length}`}
-        right={
-          <div className="flex gap-1.5">
-            <IconButton aria-label="Список упражнений" onClick={() => setListOpen(true)}>
-              <List size={20} />
+      <Hero
+        title="Тренировка"
+        subtitle={session.dayNameSnapshot}
+        icon={<Target size={18} />}
+        photo="bench"
+        height={190}
+        top={
+          <div className="flex items-center justify-between">
+            <IconButton aria-label="На главную" className="bg-black/40 backdrop-blur" onClick={() => navigate('/')}>
+              <ChevronLeft size={22} />
             </IconButton>
-            <SessionMenu bundle={bundle} />
+            <div className="flex gap-1.5">
+              <IconButton aria-label="Список упражнений" className="bg-black/40 backdrop-blur" onClick={() => setListOpen(true)}>
+                <List size={20} />
+              </IconButton>
+              <SessionMenu bundle={bundle} />
+            </div>
           </div>
         }
       />
-      <div className="-mt-1 mb-5 flex gap-1.5">
-        {exercises.map((e, i) => (
-          <button
-            key={e.id}
-            aria-label={`Упражнение ${i + 1}`}
-            onClick={() => setCurrentIndex(session.id, i)}
-            className={cx(
-              'h-1.5 flex-1 rounded-full transition-colors',
-              e.status === 'done' ? 'bg-success' : e.status === 'skipped' ? 'bg-white/25' : i === index ? 'bg-accent' : 'bg-white/10',
-            )}
-          />
-        ))}
+      <div className="mb-1 mt-3 flex items-center gap-4">
+        <div className="shrink-0 text-[16px] font-semibold">
+          Упражнение <span className="num font-extrabold">{index + 1}</span> <span className="text-ink-3">из {exercises.length}</span>
+        </div>
+        <Segments
+          className="flex-1"
+          total={exercises.length}
+          done={(i) => (exercises[i].status === 'done' ? 'done' : exercises[i].status === 'skipped' ? 'skip' : i === index ? 'current' : 'todo')}
+        />
       </div>
-      <div className="mb-1 flex items-center justify-between text-[13px] text-ink-3">
-        <span>Прогресс тренировки</span>
-        <span className="num">{Math.round((done / exercises.length) * 100)}%</span>
+      <div className="mb-3 text-right text-[12px] text-ink-3">
+        выполнено <span className="num">{Math.round((done / exercises.length) * 100)}%</span>
       </div>
 
       {phase === 'sets' && <SetsPhase key={es.id} es={es} sets={esSets} sessionId={session.id} restEndsAt={session.restEndsAt} onSkip={async () => { await skipExercise(es.id); await goNext(); }} />}
@@ -309,29 +316,29 @@ function ExerciseRunner({ bundle }: { bundle: SessionBundle }) {
 
 /* ---------- Фаза 1: подходы ---------- */
 
-function ExerciseHeader({ es }: { es: ExerciseSession }) {
+function ExerciseHeader({ es, compact }: { es: ExerciseSession; compact?: boolean }) {
   const last = useLiveQuery(() => lastResultFor(es.programExerciseId, es.sessionId), [es.programExerciseId, es.sessionId]);
   return (
-    <div className="mb-4 mt-3">
-      <h1 className="text-[30px] font-bold leading-[1.1] tracking-[-0.02em]">{es.nameSnapshot}</h1>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <span className="num text-[17px] font-semibold text-ink-2">
-          {es.plannedSets} × {es.plannedReps}
-        </span>
-        {es.isCalibration ? (
-          <Pill tone="warn">Калибровка — укажи свой рабочий вес</Pill>
-        ) : (
-          <span className="num rounded-xl bg-accent-soft px-2.5 py-1 text-[17px] font-bold text-[#c4b9ff]">{formatKg(es.plannedWeightG, true)}</span>
-        )}
+    <div className={cx('relative overflow-hidden', compact ? 'mb-3' : 'mb-4')}>
+      <div className="pointer-events-none absolute -right-6 -top-4 h-[150px] w-[190px] opacity-90 [mask-image:radial-gradient(closest-side,black_55%,transparent)]">
+        <img src={PHOTOS.plates} alt="" className="h-full w-full object-cover" />
+      </div>
+      <div className="relative pr-24">
+        <h2 className="text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em]">{es.nameSnapshot}</h2>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-ink-2">
+          <Dumbbell size={18} />
+          <span className="num text-[18px] font-semibold">
+            {es.plannedSets}×{es.plannedReps}
+          </span>
+          {es.isCalibration ? <Pill tone="warn">калибровка</Pill> : <span className="num text-[18px] font-semibold">— {formatKg(es.plannedWeightG, true)}</span>}
+        </div>
       </div>
       {last && (
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-white/[0.035] px-3 py-2 text-[13px] text-ink-2">
+        <div className="relative mt-3 flex items-center gap-2 rounded-xl bg-black/30 px-3 py-2 text-[13px] text-ink-2 ring-1 ring-white/[0.06]">
           <History size={15} className="shrink-0 text-ink-3" />
           <span className="min-w-0 truncate">
-            В прошлый раз{last.date ? ` (${formatDateShort(last.date)})` : ''}:{' '}
-            <span className="num font-semibold text-ink">
-              {last.sets.map((s) => `${s.actualReps}×${formatKg(s.actualWeightG)}`).join(', ') || '—'}
-            </span>
+            Прошлый раз{last.date ? ` (${formatDateShort(last.date)})` : ''}:{' '}
+            <span className="num font-semibold text-ink">{last.sets.map((s) => `${s.actualReps}×${formatKg(s.actualWeightG)}`).join(', ') || '—'}</span>
             {last.exercise.rating && ` · ${RATING_LABEL[last.exercise.rating].toLowerCase()}`}
           </span>
         </div>
@@ -362,17 +369,18 @@ function SetsPhase({ es, sets, sessionId, restEndsAt, onSkip }: { es: ExerciseSe
 
   return (
     <div className="animate-rise">
+      <div className="card-accent rounded-[26px] p-4 pb-3">
       <ExerciseHeader es={es} />
 
       {/* Таблица подходов */}
-      <div className="glass overflow-hidden rounded-[var(--radius-card)]">
-        <div className="grid grid-cols-[44px_1fr_1fr_44px] items-center px-3 pb-1.5 pt-3 text-[12px] font-medium text-ink-3">
+      <div>
+        <div className="grid grid-cols-[52px_1fr_1fr_44px] items-center px-2 pb-2 text-[13px] font-medium text-ink-3">
           <span>Подход</span>
           <span className="text-center">Повт.</span>
           <span className="text-center">Вес</span>
           <span />
         </div>
-        <div className="space-y-1.5 px-2 pb-2">
+        <div className="space-y-2">
           {sets.map((s) => {
             const isCur = current?.id === s.id;
             const label = s.kind === 'warmup' ? 'Р' : String(++workNo);
@@ -381,20 +389,21 @@ function SetsPhase({ es, sets, sessionId, restEndsAt, onSkip }: { es: ExerciseSe
                 key={s.id}
                 onClick={() => setEditing(s)}
                 className={cx(
-                  'grid h-12 w-full grid-cols-[44px_1fr_1fr_44px] items-center rounded-xl px-1 text-left transition',
-                  s.done && 'bg-success-soft/80 ring-1 ring-success/30',
-                  isCur && 'bg-accent-soft ring-1 ring-accent/60',
-                  !s.done && !isCur && 'bg-white/[0.03]',
+                  'grid h-[52px] w-full grid-cols-[52px_1fr_1fr_44px] items-center rounded-2xl px-1 text-left transition-all duration-300 active:scale-[0.98]',
+                  s.done && 'bg-gradient-to-r from-success/20 to-success/[0.06] glow-success',
+                  isCur && 'bg-gradient-to-r from-accent/30 to-accent/[0.08] animate-glow',
+                  !s.done && !isCur && 'border border-dashed border-white/15 bg-black/20',
                 )}
               >
                 <span className={cx('num pl-2.5 text-[16px] font-bold', s.kind === 'warmup' ? 'text-warn' : 'text-ink-2')}>{label}</span>
-                <span className="num text-center text-[17px] font-semibold">{s.done ? s.actualReps : (s.actualReps ?? s.plannedReps)}</span>
-                <span className={cx('num text-center text-[17px] font-semibold', !s.done && 'text-ink-2')}>
+                <span className="num text-center text-[19px] font-bold">{s.done ? s.actualReps : (s.actualReps ?? s.plannedReps)}</span>
+                <span className={cx('num text-center text-[19px] font-bold', !s.done && !isCur && 'text-ink-2')}>
                   {formatKg(s.done ? s.actualWeightG : s.actualWeightG ?? s.plannedWeightG)}
+                  <span className="ml-0.5 text-[13px] font-medium text-ink-3">кг</span>
                 </span>
                 <span className="grid place-items-center">
                   {s.done ? (
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-success text-[#04140d]">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-success text-[#04140d] shadow-[0_0_12px_rgb(62_227_156/0.8)] animate-pop">
                       <Check size={16} strokeWidth={3} />
                     </span>
                   ) : (
@@ -407,9 +416,11 @@ function SetsPhase({ es, sets, sessionId, restEndsAt, onSkip }: { es: ExerciseSe
         </div>
       </div>
 
+      </div>
+
       {/* Таймер отдыха */}
       {resting && (
-        <div className="mt-3 flex items-center gap-3 rounded-2xl border border-accent/40 bg-accent-soft p-3 animate-pop">
+        <div className="mx-auto mt-3 flex items-center gap-3 rounded-2xl border border-accent/50 bg-black/40 p-2.5 pl-3.5 shadow-[0_0_30px_-8px_rgb(124_92_255/0.8)] animate-pop">
           <Timer size={22} className="ml-1 text-[#b3a5ff]" />
           <div className="flex-1">
             <div className="text-[12px] text-[#c4b9ff]">Отдых</div>
@@ -563,14 +574,14 @@ const RATING_OPTIONS: { value: Rating; title: string; text: string; tone: string
     title: 'Сделал легко',
     text: 'Выполнил все подходы и повторения самостоятельно. В последнем подходе остался небольшой запас.',
     tone: 'success',
-    icon: Check,
+    icon: BicepsFlexed,
   },
   {
     value: 'hard',
     title: 'Сделал тяжело',
     text: 'Выполнил всё самостоятельно, но последнее повторение далось тяжело. Запаса практически не осталось.',
     tone: 'warn',
-    icon: AlertTriangle,
+    icon: Dumbbell,
   },
   {
     value: 'failed',
@@ -600,7 +611,8 @@ function RatePhase({ es, sets }: { es: ExerciseSession; sets: SetResult[] }) {
           ? 'border-warn/70 bg-warn-soft'
           : 'border-danger/70 bg-danger-soft'
       : 'border-line bg-surface';
-  const iconCls = (t: string) => (t === 'success' ? 'bg-success/15 text-success' : t === 'warn' ? 'bg-warn/15 text-warn' : 'bg-danger/15 text-danger');
+  const iconCls = (t: string) =>
+    t === 'success' ? 'bg-success/15 text-success ring-1 ring-success/30' : t === 'warn' ? 'bg-warn/15 text-warn ring-1 ring-warn/30' : 'bg-danger/15 text-danger ring-1 ring-danger/30';
 
   return (
     <div className="animate-rise">
@@ -608,7 +620,7 @@ function RatePhase({ es, sets }: { es: ExerciseSession; sets: SetResult[] }) {
         <div className="text-[14px] text-ink-3">
           {es.nameSnapshot} · <span className="num">{doneWork.map((s) => `${s.actualReps}×${formatKg(s.actualWeightG)}`).join(', ')}</span>
         </div>
-        <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-[-0.02em]">Как прошло упражнение?</h1>
+        <h1 className="mt-1 text-[30px] font-extrabold leading-tight tracking-[-0.03em]">Как прошло упражнение?</h1>
       </div>
       {shortReps && (
         <div className="mb-3 flex gap-2 rounded-2xl bg-warn-soft p-3 text-[13px] text-warn">
@@ -626,8 +638,8 @@ function RatePhase({ es, sets }: { es: ExerciseSession; sets: SetResult[] }) {
               onClick={() => setRating(o.value)}
               className={cx('flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition active:scale-[0.99]', toneCls(o.tone, on))}
             >
-              <span className={cx('grid h-11 w-11 shrink-0 place-items-center rounded-xl', iconCls(o.tone))}>
-                <Icon size={22} />
+              <span className={cx('grid h-14 w-14 shrink-0 place-items-center rounded-2xl', iconCls(o.tone))}>
+                <Icon size={26} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[17px] font-semibold">{o.title}</span>
@@ -746,11 +758,14 @@ function RecommendationCard({ es, rec, sessionDayLetter, onDone }: { es: Exercis
 
   return (
     <div className="mt-3 animate-rise">
-      <div className={cx('relative overflow-hidden rounded-[26px] border bg-[#15141f] p-5', tone.ring)}>
-        <div className={cx('pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b to-transparent', tone.glow)} />
+      <div className={cx('relative overflow-hidden rounded-[28px] border bg-[#15131f] p-5 shadow-[0_30px_70px_-30px_rgb(124_92_255/0.8)]', tone.ring)}>
+        <div className={cx('pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b to-transparent', tone.glow)} />
+        <div className="pointer-events-none absolute -right-10 -top-6 h-[170px] w-[200px] opacity-70 [mask-image:radial-gradient(closest-side,black_50%,transparent)]">
+          <img src={PHOTOS.plates} alt="" className="h-full w-full object-cover" />
+        </div>
         <div className="relative">
           <div className={cx('text-[13px] font-semibold uppercase tracking-[0.12em]', tone.text)}>Рекомендация</div>
-          <h2 className="mt-1.5 text-[24px] font-bold leading-tight">{rec.title}</h2>
+          <h2 className="mt-1.5 pr-16 text-[26px] font-extrabold leading-tight tracking-[-0.02em]">{rec.title}</h2>
           <p className="mt-1 text-[15px] text-ink-2">{rec.message}</p>
           <div className="mt-4 text-[14px] text-ink-3">
             {es.nameSnapshot} — тренировка {letter}
@@ -758,12 +773,12 @@ function RecommendationCard({ es, rec, sessionDayLetter, onDone }: { es: Exercis
           <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-2xl bg-black/25 p-4">
             <div>
               <div className="text-[12px] text-ink-3">{es.isCalibration ? 'Стартовый вес' : 'Текущий вес'}</div>
-              <div className="num text-[26px] font-bold">{formatKg(rec.fromWeightG)}</div>
+              <div className="num text-[30px] font-extrabold leading-none text-ink-2">{formatKg(rec.fromWeightG)}</div>
             </div>
             <ArrowRight className="text-ink-3" />
             <div className="text-right">
               <div className="text-[12px] text-ink-3">Следующий вес</div>
-              <div className={cx('num text-[30px] font-bold', delta > 0 ? 'text-success' : delta < 0 ? 'text-warn' : 'text-ink')}>{formatKg(rec.recommendedWeightG)}</div>
+              <div className={cx('num text-[40px] font-extrabold leading-none animate-pop', delta > 0 ? 'text-success drop-shadow-[0_0_18px_rgb(62_227_156/0.6)]' : delta < 0 ? 'text-warn' : 'text-accent-3')}>{formatKg(rec.recommendedWeightG)}</div>
             </div>
           </div>
           <div className="mt-2 flex items-center justify-between px-1 text-[14px]">

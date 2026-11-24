@@ -16,7 +16,8 @@ import {
   addSet,
 } from '../src/services/workout';
 import { loadDataset } from '../src/services/dataset';
-import { buildPlan } from '../src/domain/plan';
+import { buildPlan, findNextWorkout } from '../src/domain/plan';
+import { moveWorkout } from '../src/services/schedule';
 import { lineStats, linePoints, overallStats } from '../src/domain/analytics';
 import { computeRecommendation } from '../src/domain/progression';
 import { deterministicInsights, deterministicMonthlySummary } from '../src/services/assistant';
@@ -259,6 +260,34 @@ describe('Сценарии ТЗ', () => {
     const cellA1 = plan[1].cells.find((c) => c.day.letter === 'A')!;
     expect(cellA1.date).toBe('2026-11-10');
     expect(cellA1.exercises.find((e) => e.programExerciseId === bench('A').id)!.weightG).toBe(102500);
+  });
+
+  it('12b. Разовый перенос пятницы на субботу: линия C и расписание сохраняются', async () => {
+    const { profile, program, dayByLetter, bench } = await setup();
+    const C = dayByLetter('C');
+    await moveWorkout(program.id, C.id, 0, '2026-11-07');
+    let ds = await loadDataset(profile.id);
+    const cell = buildPlan(ds, program.id, 0, 0, '2026-11-06')[0].cells.find((c) => c.day.id === C.id)!;
+    expect(cell.date).toBe('2026-11-07');
+    expect(cell.slotDate).toBe('2026-11-06');
+    expect(cell.status).toBe('next'); // в пятницу не считается пропущенной
+    // в субботу проводим — засчитывается в слот пятницы этой недели
+    await doWorkout(profile.id, C.id, '2026-11-07');
+    ds = await loadDataset(profile.id);
+    const after = buildPlan(ds, program.id, 0, 1, '2026-11-07');
+    expect(after[0].cells.find((c) => c.day.id === C.id)!.status).toBe('done');
+    expect(after[1].cells.find((c) => c.day.id === C.id)!.date).toBe('2026-11-13'); // расписание не изменилось
+    expect(await weightOf(bench('C').id)).toBe(77500);
+  });
+
+  it('12c. Пропущенная на этой неделе тренировка предлагается провести сегодня', async () => {
+    const { profile, program, dayByLetter } = await setup();
+    await doWorkout(profile.id, dayByLetter('A').id, '2026-11-02');
+    await doWorkout(profile.id, dayByLetter('B').id, '2026-11-04');
+    const ds = await loadDataset(profile.id);
+    const next = findNextWorkout(ds, program.id, '2026-11-07')!; // суббота, пятница пропущена
+    expect(next.day.letter).toBe('C');
+    expect(next.status).toBe('missed');
   });
 
   it('13. Прерванная тренировка восстанавливается после «закрытия»', async () => {

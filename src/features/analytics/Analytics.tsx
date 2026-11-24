@@ -4,7 +4,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Too
 import { BarChart3, ChevronRight, Sparkles, Trophy } from 'lucide-react';
 import { useApp } from '../../app/context';
 import { goBack, navigate } from '../../app/router';
-import { Card, Empty, PageTitle, Pill, Screen, SectionTitle, Stat, TopBar, cx } from '../../ui/kit';
+import { Card, Empty, Hero, Pill, Screen, SectionTitle, Stat, TopBar, cx } from '../../ui/kit';
 import { loadDataset, type Dataset } from '../../services/dataset';
 import { PERIODS, RATING_LABEL, RATING_SCORE, lineStats, linePoints, listLines, overallStats, periodStart, type LineInfo, type PeriodKey } from '../../domain/analytics';
 import { deterministicInsights, deterministicMonthlySummary } from '../../services/assistant';
@@ -52,7 +52,7 @@ export function Analytics() {
   if (ds.sessions.length === 0) {
     return (
       <Screen>
-        <PageTitle>Аналитика</PageTitle>
+        <Hero title="Аналитика" subtitle="Только реальные результаты" icon={<BarChart3 size={18} />} height={200} />
         <Empty icon={<BarChart3 />} title="Пока нет данных" text="Графики появятся после первой завершённой тренировки. Здесь будут только реальные результаты." />
       </Screen>
     );
@@ -60,7 +60,7 @@ export function Analytics() {
 
   return (
     <Screen>
-      <PageTitle>Аналитика</PageTitle>
+      <Hero title="Аналитика" subtitle="Прогресс по каждому тренировочному дню" icon={<BarChart3 size={18} />} height={200} />
       <PeriodPicker value={period} onChange={setPeriod} />
       <ExerciseLines ds={ds} from={from} programId={program?.id} />
       <Overall ds={ds} from={from} t={t} />

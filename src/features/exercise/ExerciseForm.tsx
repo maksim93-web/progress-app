@@ -19,7 +19,11 @@ export interface ExerciseFormValue {
   autoProgression: boolean;
 }
 
-const REST_OPTIONS: (number | null)[] = [null, 60, 90, 120, 180, 240];
+const REST_OPTIONS: (number | null)[] = [null, 60, 90, 120, 180, 240, 300];
+
+function fmtRest(r: number) {
+  return `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}`;
+}
 
 function Chip({ on, children, onClick }: { on: boolean; children: React.ReactNode; onClick: () => void }) {
   return (
@@ -27,7 +31,7 @@ function Chip({ on, children, onClick }: { on: boolean; children: React.ReactNod
       onClick={onClick}
       className={cx(
         'h-10 rounded-xl border px-3.5 text-[14px] font-semibold transition',
-        on ? 'border-accent/60 bg-accent-soft text-[#c4b9ff]' : 'border-line bg-surface-2 text-ink-2 active:bg-surface-3',
+        on ? 'border-accent/70 bg-accent/20 text-accent-3 shadow-[0_0_16px_-4px_rgb(124_92_255/0.7)]' : 'border-line bg-white/[0.04] text-ink-2 active:bg-white/10',
       )}
     >
       {children}
@@ -49,6 +53,7 @@ export function ExerciseForm({
   const set = <K extends keyof ExerciseFormValue>(k: K, v: ExerciseFormValue[K]) => onChange({ ...value, [k]: v });
   const customStep = !STEP_PRESETS_G.includes(value.stepG);
   const [showCustomStep, setShowCustomStep] = useState(customStep);
+  const [customRest, setCustomRest] = useState(value.restSec !== null && !REST_OPTIONS.includes(value.restSec));
 
   return (
     <div className="space-y-4">
@@ -97,11 +102,19 @@ export function ExerciseForm({
         <div className="mb-1.5 px-1 text-[13px] font-medium text-ink-2">Отдых между подходами</div>
         <div className="flex flex-wrap gap-2">
           {REST_OPTIONS.map((r) => (
-            <Chip key={String(r)} on={value.restSec === r} onClick={() => set('restSec', r)}>
-              {r === null ? 'Не задан' : r < 60 ? `${r} с` : `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}`}
+            <Chip key={String(r)} on={!customRest && value.restSec === r} onClick={() => { setCustomRest(false); set('restSec', r); }}>
+              {r === null ? 'Не задан' : fmtRest(r)}
             </Chip>
           ))}
+          <Chip on={customRest} onClick={() => { setCustomRest(true); if (value.restSec === null) set('restSec', 150); }}>
+            Своё
+          </Chip>
         </div>
+        {customRest && value.restSec !== null && (
+          <div className="mt-2">
+            <Stepper value={value.restSec} min={15} max={900} step={15} format={fmtRest} label="мин:сек" onChange={(v) => set('restSec', v)} />
+          </div>
+        )}
       </div>
 
       <Toggle

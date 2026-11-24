@@ -22,7 +22,12 @@ export interface PlanCellExercise {
 
 export interface PlanCell {
   day: TrainingDay;
+  /** Фактическая дата в плане (с учётом разового переноса) */
   date: ISODate;
+  /** Дата по расписанию — к ней привязывается тренировка */
+  slotDate: ISODate;
+  moved: boolean;
+  weekIndex: number;
   status: CellStatus;
   sessionId: ID | null;
   /** фактическая дата, если тренировку перенесли */
@@ -59,17 +64,27 @@ export function buildPlan(ds: Dataset, programId: ID, fromWeek: number, toWeek: 
   const weeks: PlanWeek[] = [];
   for (let w = scanFrom; w <= toWeek; w++) {
     const monday = addDays(startMonday, w * 7);
-    const cells: PlanCell[] = days.map((day) => {
-      const date = addDays(monday, day.weekday);
+    const cells: PlanCell[] = [...days]
+      .map((day) => {
+        const slotDate = addDays(monday, day.weekday);
+        const mv = ds.moves.find((m) => m.dayId === day.id && m.weekIndex === w);
+        return { day, slotDate, date: mv?.date ?? slotDate };
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(({ day, slotDate, date }) => {
+      const moved = date !== slotDate;
       const session = sessions.find((s) => s.dayId === day.id && weekIndexFrom(program.startDate, s.plannedDate) === w);
       if (session) {
         const exs = ds.exerciseSessions.filter((e) => e.sessionId === session.id).sort((a, b) => a.order - b.order);
         return {
           day,
           date,
+          slotDate,
+          moved,
+          weekIndex: w,
           status: 'done',
           sessionId: session.id,
-          actualDate: session.date !== date ? session.date : null,
+          actualDate: session.date !== slotDate ? session.date : null,
           exercises: exs.map((e) => ({
             programExerciseId: e.programExerciseId,
             name: e.nameSnapshot,
@@ -85,7 +100,7 @@ export function buildPlan(ds: Dataset, programId: ID, fromWeek: number, toWeek: 
         .filter((p) => p.dayId === day.id && p.status === 'active')
         .sort((a, b) => a.order - b.order);
       let status: CellStatus;
-      if (date < program.startDate) status = 'before_start';
+      if (slotDate < program.startDate && !moved) status = 'before_start';
       else if (date < todayISO) status = 'missed';
       else if (!nextUsed.has(day.id)) {
         status = 'next';
@@ -94,6 +109,9 @@ export function buildPlan(ds: Dataset, programId: ID, fromWeek: number, toWeek: 
       return {
         day,
         date,
+        slotDate,
+        moved,
+        weekIndex: w,
         status,
         sessionId: null,
         actualDate: null,
@@ -119,7 +137,13 @@ export function findNextWorkout(ds: Dataset, programId: ID, todayISO: ISODate): 
   if (!program) return null;
   const tw = Math.max(0, weekIndexFrom(program.startDate, todayISO));
   const weeks = buildPlan(ds, programId, tw, tw + 2, todayISO);
-  const cells = weeks.flatMap((w) => w.cells).filter((c) => c.status === 'next' || c.status === 'planned');
+  const all = weeks.flatMap((w) => w.cells);
+  // 1) запланированная на сегодня; 2) пропущенная на этой неделе — можно провести сегодня; 3) ближайшая будущая
+  const todayCell = all.find((c) => c.date === todayISO && (c.status === 'next' || c.status === 'planned'));
+  if (todayCell) return todayCell;
+  const missed = all.filter((c) => c.status === 'missed' && c.weekIndex === tw).sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (missed) return missed;
+  const cells = all.filter((c) => c.status === 'next' || c.status === 'planned');
   cells.sort((a, b) => a.date.localeCompare(b.date));
   return cells[0] ?? null;
 }

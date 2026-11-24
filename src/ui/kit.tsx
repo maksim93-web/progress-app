@@ -11,10 +11,10 @@ export function cx(...a: (string | false | null | undefined)[]) {
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'success' | 'danger';
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-gradient-to-b from-[#8a72ff] to-[#6a4dff] text-white glow-accent active:brightness-90',
-  secondary: 'bg-surface-3 text-ink border border-line-strong active:bg-surface-2',
+  primary: 'bg-gradient-to-b from-[#9479ff] via-[#7c5cff] to-[#5f3ff0] text-white glow-accent active:brightness-90',
+  secondary: 'glass text-ink active:bg-white/10',
   ghost: 'bg-transparent text-ink-2 active:bg-white/5',
-  success: 'bg-gradient-to-b from-[#3ee0a6] to-[#20b985] text-[#04140d] shadow-[0_10px_30px_-12px_rgb(52_211_153/0.7)] active:brightness-90',
+  success: 'bg-gradient-to-b from-[#5af0b0] to-[#1fbf7f] text-[#03140c] shadow-[0_14px_34px_-12px_rgb(62_227_156/0.75),inset_0_1px_0_rgb(255_255_255/0.4)] active:brightness-90',
   danger: 'bg-danger-soft text-danger border border-danger/30 active:brightness-90',
 };
 
@@ -80,7 +80,7 @@ export function TopBar({ title, subtitle, onBack, right }: { title?: ReactNode; 
 export function PageTitle({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
   return (
     <div className="mb-5 mt-1">
-      <h1 className="text-[32px] font-bold leading-[1.1] tracking-[-0.02em]">{children}</h1>
+      <h1 className="text-[34px] font-extrabold leading-[1.05] tracking-[-0.03em]">{children}</h1>
       {sub && <div className="mt-1.5 text-[15px] text-ink-2">{sub}</div>}
     </div>
   );
@@ -89,7 +89,7 @@ export function PageTitle({ children, sub }: { children: ReactNode; sub?: ReactN
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
     <div className="mb-2.5 mt-6 flex items-end justify-between px-1">
-      <h2 className="text-[19px] font-semibold tracking-[-0.01em]">{children}</h2>
+      <h2 className="text-[20px] font-bold tracking-[-0.02em]">{children}</h2>
       {right && <div className="text-[13px] text-ink-3">{right}</div>}
     </div>
   );
@@ -304,7 +304,7 @@ export function Stat({ label, value, sub, tone }: { label: ReactNode; value: Rea
   return (
     <div className="min-w-0">
       <div className="text-[12px] font-medium text-ink-3">{label}</div>
-      <div className={cx('num mt-1 truncate text-[24px] font-bold leading-tight', c)}>{value}</div>
+      <div className={cx('num mt-1 truncate text-[26px] font-extrabold leading-tight', c)}>{value}</div>
       {sub && <div className="mt-0.5 truncate text-[12px] text-ink-3">{sub}</div>}
     </div>
   );
@@ -326,4 +326,140 @@ export function toast(text: string) {
   toastTimer = window.setTimeout(() => {
     if (el) el.style.opacity = '0';
   }, 2600);
+}
+
+
+/* ---------- v2: фото, плитки, шапки ---------- */
+
+const BASE = import.meta.env.BASE_URL;
+export const PHOTOS = {
+  hero: BASE + 'img/hero.jpg',
+  bench: BASE + 'img/bench.jpg',
+  plates: BASE + 'img/plates.jpg',
+  dumbbells: BASE + 'img/dumbbells.jpg',
+};
+export type PhotoKey = keyof typeof PHOTOS;
+
+/** Шапка экрана с атмосферным фото зала (на всю ширину, под статус-баром) */
+export function Hero({
+  title,
+  subtitle,
+  icon,
+  photo = 'hero',
+  height = 250,
+  top,
+  children,
+}: {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  icon?: ReactNode;
+  photo?: PhotoKey;
+  height?: number;
+  top?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="relative -mx-4 mb-2 px-4" style={{ minHeight: height }}>
+      <div className="hero-photo animate-hero" style={{ height }}>
+        <img src={PHOTOS[photo]} alt="" />
+      </div>
+      <div className="relative flex flex-col justify-end" style={{ minHeight: height }}>
+        {top && <div className="absolute inset-x-0 top-0">{top}</div>}
+        <div className="animate-rise">
+          <h1 className="text-[36px] font-extrabold leading-[1.02] tracking-[-0.035em] drop-shadow-[0_2px_20px_rgb(0_0_0/0.6)]">{title}</h1>
+          {subtitle && (
+            <div className="mt-2 flex items-center gap-2 text-[16px] text-ink-2">
+              {icon && <span className="text-accent-2">{icon}</span>}
+              <span className="truncate">{subtitle}</span>
+            </div>
+          )}
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** Миниатюра-фото в карточке */
+export function Photo({ name, className }: { name: PhotoKey; className?: string }) {
+  return (
+    <div className={cx('relative overflow-hidden', className)}>
+      <img src={PHOTOS[name]} alt="" className="h-full w-full object-cover" loading="lazy" />
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#121019]/70" />
+    </div>
+  );
+}
+
+const TILE_TONES = {
+  accent: 'bg-accent/15 text-accent-2 ring-1 ring-accent/30',
+  success: 'bg-success/12 text-success ring-1 ring-success/30',
+  warn: 'bg-warn/12 text-warn ring-1 ring-warn/30',
+  danger: 'bg-danger/12 text-danger ring-1 ring-danger/30',
+  neutral: 'bg-white/[0.06] text-ink-2 ring-1 ring-white/10',
+};
+
+export function IconTile({ children, tone = 'accent', size = 44, className }: { children: ReactNode; tone?: keyof typeof TILE_TONES; size?: number; className?: string }) {
+  return (
+    <span className={cx('grid shrink-0 place-items-center rounded-2xl', TILE_TONES[tone], className)} style={{ width: size, height: size }}>
+      {children}
+    </span>
+  );
+}
+
+/** Плитка показателя с иконкой (как на макетах) */
+export function StatTile({ icon, label, value, sub, tone, onClick }: { icon: ReactNode; label: ReactNode; value: ReactNode; sub?: ReactNode; tone?: 'success' | 'accent' | 'warn'; onClick?: () => void }) {
+  const c = tone === 'success' ? 'text-success' : tone === 'accent' ? 'text-accent-3' : tone === 'warn' ? 'text-warn' : 'text-ink';
+  const Comp = onClick ? 'button' : 'div';
+  return (
+    <Comp onClick={onClick} className="glass flex min-w-0 flex-col rounded-[20px] p-3.5 text-left">
+      <span className="text-ink-2">{icon}</span>
+      <span className="mt-2 text-[12px] leading-tight text-ink-3">{label}</span>
+      <span className={cx('num mt-1 truncate text-[25px] font-extrabold leading-none', c)}>{value}</span>
+      {sub && <span className="mt-1 truncate text-[11px] text-ink-3">{sub}</span>}
+    </Comp>
+  );
+}
+
+/** Сегментный прогресс (как «Упражнение 1 из 5») */
+export function Segments({ total, done, current, className }: { total: number; done: (i: number) => 'done' | 'skip' | 'current' | 'todo'; current?: number; className?: string }) {
+  void current;
+  return (
+    <div className={cx('flex gap-1.5', className)}>
+      {Array.from({ length: total }, (_, i) => {
+        const st = done(i);
+        return (
+          <span
+            key={i}
+            className={cx(
+              'h-[7px] flex-1 rounded-full transition-all duration-500',
+              st === 'done' && 'bg-success shadow-[0_0_10px_rgb(62_227_156/0.6)]',
+              st === 'current' && 'bg-accent shadow-[0_0_12px_rgb(124_92_255/0.9)]',
+              st === 'skip' && 'bg-white/25',
+              st === 'todo' && 'bg-white/10',
+            )}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/** Плавный «счёт» числа при появлении */
+export function CountUp({ value, format = (v: number) => String(Math.round(v)), duration = 700 }: { value: number; format?: (v: number) => string; duration?: number }) {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const from = 0;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - start) / duration);
+      const e = 1 - Math.pow(1 - k, 3);
+      setV(from + (value - from) * e);
+      if (k < 1) raf = requestAnimationFrame(tick);
+      else setV(value);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration]);
+  return <>{format(v)}</>;
 }

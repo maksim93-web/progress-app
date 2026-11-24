@@ -11,6 +11,7 @@ import type {
   TrainingProgram,
   WeightRecommendation,
   WorkoutSession,
+  WorkoutMove,
 } from '../domain/types';
 
 /** Снимок всех данных профиля — вход для плана, аналитики и помощника */
@@ -25,6 +26,7 @@ export interface Dataset {
   sets: SetResult[];
   recommendations: WeightRecommendation[];
   history: ProgressHistory[];
+  moves: WorkoutMove[];
 }
 
 export async function loadDataset(profileId: ID): Promise<Dataset> {
@@ -41,5 +43,6 @@ export async function loadDataset(profileId: ID): Promise<Dataset> {
   const sets = await db.sets.where('exerciseSessionId').anyOf(exerciseSessions.map((e) => e.id)).toArray();
   const recommendations = await db.recommendations.where('sessionId').anyOf(sessionIds).toArray();
   const history = await db.history.where('programExerciseId').anyOf(peIds).toArray();
-  return { programs, days, programExercises, rules, exercises, sessions, exerciseSessions, sets, recommendations, history };
+  const moves = await db.moves.where('programId').anyOf(programIds).toArray();
+  return { programs, days, programExercises, rules, exercises, sessions, exerciseSessions, sets, recommendations, history, moves };
 }

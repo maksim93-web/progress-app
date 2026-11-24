@@ -5,17 +5,19 @@ import { useApp } from '../../app/context';
 import { navigate } from '../../app/router';
 import { IconButton, Pill, Segmented, cx } from '../../ui/kit';
 import { loadDataset } from '../../services/dataset';
-import { buildPlan, cycleInfo, type PlanCell, type PlanCellExercise, type PlanWeek } from '../../domain/plan';
-import { WEEKDAYS_SHORT, formatDateShort, today, weekIndexFrom } from '../../lib/dates';
+import { buildPlan, type PlanCell, type PlanCellExercise, type PlanWeek } from '../../domain/plan';
+import { WEEKDAYS_SHORT, addDays, formatDateShort, today, weekIndexFrom, weekdayOf } from '../../lib/dates';
 import { formatKg } from '../../lib/weight';
 import { RATING_LABEL } from '../../domain/analytics';
+import { MoveSheet } from '../home/Home';
 
-type Mode = 'week' | 'month' | 'cycle';
+type Mode = 'week' | 'month';
 
 export function PlanView({ programId }: { programId: string }) {
   const { profile } = useApp();
   const ds = useLiveQuery(() => loadDataset(profile.id), [profile.id]);
   const [mode, setMode] = useState<Mode>('week');
+  const [moving, setMoving] = useState<PlanCell | null>(null);
   const [offset, setOffset] = useState(0);
   const t = today();
   const program = ds?.programs.find((p) => p.id === programId);
@@ -24,10 +26,7 @@ export function PlanView({ programId }: { programId: string }) {
   const range = useMemo(() => {
     if (!program) return [0, 0];
     if (mode === 'week') return [curWeek + offset, curWeek + offset];
-    if (mode === 'month') return [curWeek + offset * 4, curWeek + offset * 4 + 3];
-    const { cycleNumber } = cycleInfo(program, curWeek);
-    const first = (cycleNumber - 1 + offset) * program.cycleWeeks;
-    return [first, first + program.cycleWeeks - 1];
+    return [curWeek + offset * 4, curWeek + offset * 4 + 3];
   }, [mode, offset, curWeek, program]);
 
   const weeks = useMemo(() => (ds && program ? buildPlan(ds, program.id, Math.max(0, range[0]), Math.max(0, range[1]), t) : []), [ds, program, range, t]);
@@ -45,12 +44,10 @@ export function PlanView({ programId }: { programId: string }) {
 
   const title =
     mode === 'week'
-      ? `Неделя ${cycleInfo(program, range[0]).weekInCycle}${weeks[0] ? ` · ${formatDateShort(weeks[0].monday)}` : ''}`
-      : mode === 'month'
-        ? weeks.length
-          ? `${formatDateShort(weeks[0].monday)} — ${formatDateShort(weeks.at(-1)!.cells.at(-1)?.date ?? weeks.at(-1)!.monday)}`
-          : ''
-        : `Цикл ${cycleInfo(program, Math.max(0, range[0])).cycleNumber}`;
+      ? `Неделя ${range[0] + 1}${weeks[0] ? ` · ${formatDateShort(weeks[0].monday)}` : ''}`
+      : weeks.length
+        ? `${formatDateShort(weeks[0].monday)} — ${formatDateShort(addDays(weeks.at(-1)!.monday, 6))}`
+        : '';
 
   return (
     <div className="animate-rise">
@@ -63,7 +60,6 @@ export function PlanView({ programId }: { programId: string }) {
         options={[
           { value: 'week', label: 'Неделя' },
           { value: 'month', label: 'Месяц' },
-          { value: 'cycle', label: 'Цикл' },
         ]}
       />
       <div className="mt-3 flex items-center gap-2">
@@ -79,7 +75,7 @@ export function PlanView({ programId }: { programId: string }) {
       <Legend />
 
       {mode === 'week' ? (
-        <div className="mt-3 space-y-3">{weeks[0]?.cells.map((c) => <DayCard key={c.day.id} cell={c} />)}</div>
+        <div className="mt-3 space-y-3 stagger">{weeks[0]?.cells.map((c) => <DayCard key={c.day.id} cell={c} onMove={() => setMoving(c)} />)}</div>
       ) : (
         <>
           <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
@@ -93,9 +89,10 @@ export function PlanView({ programId }: { programId: string }) {
               </button>
             ))}
           </div>
-          {selectedEx && <PlanTable weeks={weeks} exerciseId={selectedEx} cycleWeeks={program.cycleWeeks} />}
+          {selectedEx && <PlanTable weeks={weeks} exerciseId={selectedEx} />}
         </>
       )}
+      <MoveSheet cell={moving} onClose={() => setMoving(null)} programId={program.id} todayISO={t} />
     </div>
   );
 }
@@ -135,7 +132,7 @@ function valueCls(kind: PlanCellExercise['kind'], status: PlanCell['status']) {
   }
 }
 
-function DayCard({ cell }: { cell: PlanCell }) {
+function DayCard({ cell, onMove }: { cell: PlanCell; onMove: () => void }) {
   const status = cell.status;
   const head = {
     done: <Pill tone="success"><Check size={12} strokeWidth={3} /> Выполнено</Pill>,
@@ -146,13 +143,13 @@ function DayCard({ cell }: { cell: PlanCell }) {
   }[status];
   return (
     <button
-      onClick={() => cell.sessionId && navigate('/history/' + cell.sessionId)}
+      onClick={() => (cell.sessionId ? navigate('/history/' + cell.sessionId) : onMove())}
       className={cx(
-        'block w-full rounded-[var(--radius-card)] border p-4 text-left',
+        'block w-full rounded-[var(--radius-card)] border p-4 text-left transition active:scale-[0.99]',
         status === 'done' && 'border-success/30 bg-success-soft/40',
         status === 'missed' && 'border-danger/25 bg-danger-soft/30',
         status === 'next' && 'card-accent',
-        (status === 'planned' || status === 'before_start') && 'border-dashed border-line-strong bg-surface/50',
+        (status === 'planned' || status === 'before_start') && 'glass border-dashed',
       )}
     >
       <div className="mb-2 flex items-center gap-2">
@@ -160,7 +157,8 @@ function DayCard({ cell }: { cell: PlanCell }) {
         <div className="min-w-0 flex-1">
           <div className="truncate text-[16px] font-semibold">{cell.day.name}</div>
           <div className="text-[12px] text-ink-3">
-            {WEEKDAYS_SHORT[cell.day.weekday]}, {formatDateShort(cell.date)}
+            {WEEKDAYS_SHORT[weekdayOf(cell.date)]}, {formatDateShort(cell.date)}
+            {cell.moved && cell.status !== 'done' && ` · перенесена с ${WEEKDAYS_SHORT[cell.day.weekday].toLowerCase()}`}
             {cell.actualDate && ` · проведена ${formatDateShort(cell.actualDate)}`}
           </div>
         </div>
@@ -183,7 +181,7 @@ function DayCard({ cell }: { cell: PlanCell }) {
   );
 }
 
-function PlanTable({ weeks, exerciseId, cycleWeeks }: { weeks: PlanWeek[]; exerciseId: string; cycleWeeks: number }) {
+function PlanTable({ weeks, exerciseId }: { weeks: PlanWeek[]; exerciseId: string }) {
   const { profile } = useApp();
   const ds = useLiveQuery(() => loadDataset(profile.id), [profile.id]);
   if (!weeks.length || !ds) return null;
@@ -214,7 +212,7 @@ function PlanTable({ weeks, exerciseId, cycleWeeks }: { weeks: PlanWeek[]; exerc
       {weeks.map((w) => (
         <div key={w.index} className="grid border-b border-line last:border-0" style={{ gridTemplateColumns: `64px repeat(${days.length}, 1fr)` }}>
           <div className="px-3 py-3 text-[13px] font-semibold text-ink-2">
-            {((w.index % cycleWeeks) + 1).toString()}
+            {w.index + 1}
             <div className="text-[11px] font-normal text-ink-3">{formatDateShort(w.monday)}</div>
           </div>
           {days.map((d) => {

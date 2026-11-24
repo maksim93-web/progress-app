@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, ChevronRight, Copy, Pencil, Plus, Sparkles, Trash2, TrendingUp } from 'lucide-react';
-import { Button, Card, Field, IconButton, PageTitle, Pill, Screen, Sheet, Stepper, TopBar, cx, inputCls, toast } from '../../ui/kit';
+import { ArrowDown, ArrowUp, CalendarDays, CheckCheck, ChevronRight, Copy, Flag, Pencil, Plus, Sparkles, Trash2, TrendingUp } from 'lucide-react';
+import { Button, Card, IconButton, IconTile, PHOTOS, Pill, Screen, Segments, Sheet, TopBar, cx, inputCls, toast } from '../../ui/kit';
 import { useApp } from '../../app/context';
 import { navigate } from '../../app/router';
-import { GOAL_PRESETS } from '../../domain/library';
 import { LETTERS, createProgramFromDraft, validateDraft, type DraftDay, type DraftExercise, type ProgramDraft } from '../../services/program';
 import { WEEKDAYS_FULL, WEEKDAYS_SHORT, formatDateLong, today } from '../../lib/dates';
 import { formatKg } from '../../lib/weight';
@@ -27,7 +26,7 @@ const DEFAULT_WEEKDAYS: Record<number, Weekday[]> = {
 };
 
 function initialDraft(): ProgramDraft {
-  return { name: 'Мой жим лёжа', goal: GOAL_PRESETS[0], daysPerWeek: 3, cycleWeeks: 4, startDate: today(), days: [] };
+  return { name: 'Мой жим лёжа', goal: '', daysPerWeek: 3, cycleWeeks: 4, startDate: today(), days: [] };
 }
 
 function loadDraft(): { step: Step; draft: ProgramDraft } | null {
@@ -79,15 +78,16 @@ export function Onboarding({ firstRun }: { firstRun: boolean }) {
 
   const header = step !== 'welcome' && (
     <>
-      <TopBar
-        onBack={() => (idx > 0 ? go(STEPS[idx - 1]) : firstRun ? go('welcome') : navigate('/program'))}
-        title="Новая программа"
-        subtitle={`Шаг ${idx + 1} из ${STEPS.length}`}
-      />
-      <div className="mb-5 flex gap-1.5">
-        {STEPS.map((s, i) => (
-          <div key={s} className={cx('h-1.5 flex-1 rounded-full transition-colors', i <= idx ? 'bg-accent' : 'bg-white/10')} />
-        ))}
+      <div className="relative -mx-4 -mt-[calc(var(--safe-top)+12px)] mb-2 h-[150px] overflow-hidden">
+        <img src={PHOTOS.hero} alt="" className="h-full w-full object-cover object-[75%_45%] opacity-80 animate-hero" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(7_7_11/0.4),rgb(7_7_11/0.2)_40%,#07070b)]" />
+      </div>
+      <div className="relative -mt-[96px] mb-6">
+        <TopBar
+          onBack={() => (idx > 0 ? go(STEPS[idx - 1]) : firstRun ? go('welcome') : navigate('/program'))}
+          title={<span className="text-[15px] text-ink-2">Шаг {idx + 1} из {STEPS.length}</span>}
+        />
+        <Segments total={STEPS.length} done={(i) => (i < idx ? 'done' : i === idx ? 'current' : 'todo')} />
       </div>
     </>
   );
@@ -125,40 +125,45 @@ export function Onboarding({ firstRun }: { firstRun: boolean }) {
 
 function Welcome({ onStart }: { onStart: () => void }) {
   return (
-    <div className="pt-safe pb-safe flex min-h-[100dvh] flex-col px-5">
-      <div className="relative flex flex-1 flex-col justify-center">
-        <div className="pointer-events-none absolute -right-24 top-6 h-72 w-72 rounded-full bg-[#7b61ff]/30 blur-[80px]" />
-        <div className="pointer-events-none absolute -left-24 bottom-24 h-64 w-64 rounded-full bg-[#5b8cff]/20 blur-[80px]" />
-        <div className="relative animate-rise">
-          <div className="mb-8 grid h-16 w-16 place-items-center rounded-[20px] bg-gradient-to-br from-[#8a72ff] to-[#4f7dff] glow-accent">
-            <TrendingUp size={30} strokeWidth={2.4} />
-          </div>
-          <div className="text-[13px] font-semibold uppercase tracking-[0.22em] text-[#a99bff]">PROGRESS</div>
-          <h1 className="mt-3 text-[40px] font-bold leading-[1.05] tracking-[-0.03em]">
-            Твоя программа.
-            <br />
-            Твои результаты.
-            <br />
-            <span className="bg-gradient-to-r from-[#a99bff] to-[#6f9bff] bg-clip-text text-transparent">Твой прогресс.</span>
-          </h1>
-          <p className="mt-5 max-w-[340px] text-[17px] leading-snug text-ink-2">Адаптивный тренировочный план, который развивается вместе с тобой.</p>
-        </div>
-        <div className="relative mt-10 grid grid-cols-3 gap-2 animate-rise [animation-delay:120ms]">
-          {[
-            ['1', 'Составь программу'],
-            ['2', 'Отмечай подходы'],
-            ['3', 'Получай новый вес'],
-          ].map(([n, t]) => (
-            <div key={n} className="glass rounded-2xl p-3">
-              <div className="num text-[22px] font-bold text-[#a99bff]">{n}</div>
-              <div className="mt-1 text-[13px] leading-tight text-ink-2">{t}</div>
-            </div>
-          ))}
-        </div>
+    <div className="relative flex min-h-[100dvh] flex-col overflow-hidden px-5 pb-safe pt-safe">
+      <div className="absolute inset-0 animate-hero">
+        <img src={PHOTOS.bench} alt="" className="h-full w-full object-cover object-[60%_center]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(7_7_11/0.55)_0%,rgb(7_7_11/0.1)_30%,rgb(7_7_11/0.75)_62%,#07070b_88%)]" />
       </div>
-      <Button size="xl" onClick={onStart} className="mb-2">
-        Создать программу
-      </Button>
+      <div className="relative mt-2 flex items-center gap-2.5 animate-rise">
+        <div className="grid h-10 w-10 place-items-center rounded-[13px] bg-gradient-to-br from-[#9479ff] to-[#5b6dff] glow-accent">
+          <TrendingUp size={20} strokeWidth={2.6} />
+        </div>
+        <span className="text-[15px] font-extrabold tracking-[0.28em]">PROGRESS</span>
+      </div>
+      <div className="relative mt-auto stagger">
+        <h1 className="text-[44px] font-extrabold leading-[0.98] tracking-[-0.045em]">
+          Твоя программа.
+          <br />
+          Твои результаты.
+          <br />
+          <span className="text-gradient">Твой прогресс.</span>
+        </h1>
+        <p className="mt-4 max-w-[340px] text-[17px] leading-snug text-ink-2">Адаптивный тренировочный план, который развивается вместе с тобой.</p>
+        <div className="mt-7 grid grid-cols-3 gap-2">
+          {[
+            [Pencil, 'Составь программу'],
+            [CheckCheck, 'Отмечай подходы'],
+            [TrendingUp, 'Получай новый вес'],
+          ].map(([Icon, t], i) => {
+            const I = Icon as typeof Pencil;
+            return (
+              <div key={i} className="glass rounded-[18px] p-3">
+                <I size={20} className="text-accent-2" />
+                <div className="mt-2 text-[13px] font-medium leading-tight text-ink">{t as string}</div>
+              </div>
+            );
+          })}
+        </div>
+        <Button size="xl" onClick={onStart} className="mt-6">
+          Создать программу <ChevronRight size={20} />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -166,61 +171,73 @@ function Welcome({ onStart }: { onStart: () => void }) {
 /* ---------- Экран 2. Основные настройки ---------- */
 
 function SettingsStep({ draft, setDraft, onNext }: { draft: ProgramDraft; setDraft: (d: ProgramDraft) => void; onNext: () => void }) {
-  const [customGoal, setCustomGoal] = useState(!GOAL_PRESETS.includes(draft.goal));
+  const [showDate, setShowDate] = useState(draft.startDate !== today());
   return (
-    <div className="animate-rise">
-      <PageTitle sub="Это можно изменить в любой момент">Основные настройки</PageTitle>
-      <div className="space-y-5">
-        <Field label="Название программы">
-          <input className={inputCls} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Например, Жим 100+" />
-        </Field>
-        <div>
-          <div className="mb-1.5 px-1 text-[13px] font-medium text-ink-2">Основная цель</div>
-          <div className="flex flex-wrap gap-2">
-            {GOAL_PRESETS.map((g) => (
+    <div>
+      <StepHead title="Новая программа" sub="Название и сколько раз в неделю тренируешься" />
+      <div className="space-y-4 stagger">
+        <div className="glass rounded-[var(--radius-card)] p-4">
+          <div className="mb-2 text-[13px] font-medium text-ink-2">Название программы</div>
+          <input
+            className="w-full bg-transparent text-[24px] font-bold tracking-[-0.02em] outline-none placeholder:text-ink-3"
+            value={draft.name}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            placeholder="Например, Жим 100+"
+          />
+        </div>
+        <div className="glass rounded-[var(--radius-card)] p-4">
+          <div className="mb-3 flex items-center gap-3">
+            <IconTile tone="accent">
+              <CalendarDays size={22} />
+            </IconTile>
+            <div>
+              <div className="text-[16px] font-semibold">Тренировок в неделю</div>
+              <div className="text-[13px] text-ink-3">Дни выберешь на следующем шаге</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-7 gap-1.5">
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
               <button
-                key={g}
-                onClick={() => {
-                  setCustomGoal(false);
-                  setDraft({ ...draft, goal: g });
-                }}
+                key={n}
+                onClick={() => setDraft({ ...draft, daysPerWeek: n, days: [] })}
                 className={cx(
-                  'rounded-xl border px-3.5 py-2.5 text-[14px] font-semibold',
-                  !customGoal && draft.goal === g ? 'border-accent/60 bg-accent-soft text-[#c4b9ff]' : 'border-line bg-surface-2 text-ink-2',
+                  'num h-14 rounded-2xl text-[22px] font-extrabold transition active:scale-95',
+                  draft.daysPerWeek === n ? 'bg-gradient-to-b from-[#9479ff] to-[#5f3ff0] text-white glow-accent' : 'bg-white/[0.05] text-ink-2',
                 )}
               >
-                {g}
+                {n}
               </button>
             ))}
-            <button
-              onClick={() => {
-                setCustomGoal(true);
-                setDraft({ ...draft, goal: '' });
-              }}
-              className={cx('rounded-xl border px-3.5 py-2.5 text-[14px] font-semibold', customGoal ? 'border-accent/60 bg-accent-soft text-[#c4b9ff]' : 'border-line bg-surface-2 text-ink-2')}
-            >
-              Своя цель
-            </button>
           </div>
-          {customGoal && <input className={cx(inputCls, 'mt-2')} autoFocus value={draft.goal} placeholder="Опиши цель" onChange={(e) => setDraft({ ...draft, goal: e.target.value })} />}
         </div>
-        <div>
-          <div className="mb-1.5 px-1 text-[13px] font-medium text-ink-2">Тренировок в неделю</div>
-          <Stepper size="lg" value={draft.daysPerWeek} min={1} max={7} label="тренировок" onChange={(v) => setDraft({ ...draft, daysPerWeek: v, days: [] })} />
+        <div className="glass rounded-[var(--radius-card)] p-4">
+          <button onClick={() => setShowDate(!showDate)} className="flex w-full items-center gap-3 text-left">
+            <IconTile tone="neutral">
+              <Flag size={20} />
+            </IconTile>
+            <div className="min-w-0 flex-1">
+              <div className="text-[16px] font-semibold">Начало</div>
+              <div className="text-[13px] text-ink-3">{draft.startDate === today() ? 'Сегодня' : formatDateLong(draft.startDate)}</div>
+            </div>
+            <span className="text-[14px] font-semibold text-accent-2">{showDate ? 'Готово' : 'Изменить'}</span>
+          </button>
+          {showDate && <input type="date" className={cx(inputCls, 'mt-3')} value={draft.startDate} onChange={(e) => e.target.value && setDraft({ ...draft, startDate: e.target.value })} />}
         </div>
-        <div>
-          <div className="mb-1.5 px-1 text-[13px] font-medium text-ink-2">Продолжительность цикла</div>
-          <Stepper size="lg" value={draft.cycleWeeks} min={1} max={52} label="недель" onChange={(v) => setDraft({ ...draft, cycleWeeks: v })} />
-        </div>
-        <Field label="Дата начала" hint={formatDateLong(draft.startDate)}>
-          <input type="date" className={inputCls} value={draft.startDate} onChange={(e) => e.target.value && setDraft({ ...draft, startDate: e.target.value })} />
-        </Field>
       </div>
       <div className="mt-8">
-        <Button size="xl" disabled={!draft.name.trim() || !draft.goal.trim()} onClick={onNext}>
+        <Button size="xl" disabled={!draft.name.trim()} onClick={onNext}>
           Продолжить
         </Button>
       </div>
+    </div>
+  );
+}
+
+function StepHead({ title, sub }: { title: string; sub: string }) {
+  return (
+    <div className="mb-5 animate-rise">
+      <h1 className="text-[34px] font-extrabold leading-[1.05] tracking-[-0.035em]">{title}</h1>
+      <div className="mt-1.5 text-[15px] leading-snug text-ink-2">{sub}</div>
     </div>
   );
 }
@@ -252,7 +269,7 @@ function DaysStep({ draft, setDraft, onNext }: { draft: ProgramDraft; setDraft: 
 
   return (
     <div className="animate-rise">
-      <PageTitle sub={`Выбери ${need} ${need === 1 ? 'день' : need < 5 ? 'дня' : 'дней'} и дай тренировкам названия`}>Дни тренировок</PageTitle>
+      <StepHead title="Дни тренировок" sub={`Выбери ${need} ${need === 1 ? 'день' : need < 5 ? 'дня' : 'дней'} и дай тренировкам названия. Потом любую тренировку можно перенести`} />
       <div className="grid grid-cols-7 gap-1.5">
         {WEEKDAYS_SHORT.map((label, i) => {
           const d = selected.get(i as Weekday);
@@ -262,7 +279,7 @@ function DaysStep({ draft, setDraft, onNext }: { draft: ProgramDraft; setDraft: 
               onClick={() => toggle(i as Weekday)}
               className={cx(
                 'flex aspect-[0.78] flex-col items-center justify-center gap-1 rounded-2xl border text-[15px] font-semibold transition active:scale-95',
-                d ? 'border-accent/70 bg-gradient-to-b from-[#7b61ff]/35 to-[#7b61ff]/10 text-white' : 'border-line bg-surface text-ink-2',
+                d ? 'border-accent/70 bg-gradient-to-b from-accent/40 to-accent/10 text-white glow-accent' : 'glass text-ink-2',
               )}
             >
               {label}
@@ -278,8 +295,8 @@ function DaysStep({ draft, setDraft, onNext }: { draft: ProgramDraft; setDraft: 
       </div>
       <div className="mt-5 space-y-2.5">
         {draft.days.map((d) => (
-          <div key={d.key} className="glass flex items-center gap-3 rounded-2xl p-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-[17px] font-bold text-[#c4b9ff]">{d.letter}</div>
+          <div key={d.key} className="glass flex items-center gap-3 rounded-[20px] p-3.5">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#9479ff] to-[#5b6dff] text-[19px] font-extrabold text-white glow-accent">{d.letter}</div>
             <div className="min-w-0 flex-1">
               <div className="text-[12px] text-ink-3">{WEEKDAYS_FULL[d.weekday]}</div>
               <input
@@ -341,7 +358,7 @@ function BuilderStep({
 
   return (
     <div className="animate-rise">
-      <PageTitle sub="Состав повторяется каждую неделю, пока ты его не изменишь">Конструктор</PageTitle>
+      <StepHead title="Упражнения" sub="Состав повторяется каждую неделю, пока ты его не изменишь" />
       <div className="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4">
         {draft.days.map((d) => (
           <button
@@ -506,9 +523,7 @@ function WeightsStep({ draft, setDraft, onCreate }: { draft: ProgramDraft; setDr
 
   return (
     <div className="animate-rise">
-      <PageTitle sub="Укажи известные рабочие веса. Неизвестные оставь пустыми — определишь их на первой тренировке без попыток на максимум.">
-        Рабочие веса
-      </PageTitle>
+      <StepHead title="Рабочие веса" sub="Укажи известные веса. Неизвестные оставь пустыми — определишь их на первой тренировке без попыток на максимум." />
       <div className="space-y-5">
         {draft.days.map((d) => (
           <div key={d.key}>

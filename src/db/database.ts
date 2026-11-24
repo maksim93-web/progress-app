@@ -13,6 +13,7 @@ import type {
   ProgressHistory,
   ProgramChange,
   MetaRecord,
+  WorkoutMove,
 } from '../domain/types';
 
 /**
@@ -34,6 +35,7 @@ export class ProgressDB extends Dexie {
   history!: Table<ProgressHistory, string>;
   changes!: Table<ProgramChange, string>;
   meta!: Table<MetaRecord, string>;
+  moves!: Table<WorkoutMove, string>;
 
   constructor(name = 'progress-db') {
     super(name);
@@ -51,6 +53,9 @@ export class ProgressDB extends Dexie {
       history: 'id, programExerciseId, at',
       changes: 'id, programId, at',
       meta: 'key',
+    });
+    this.version(2).stores({
+      moves: 'id, programId, dayId, [dayId+weekIndex]',
     });
   }
 }
@@ -76,5 +81,6 @@ export const ALL_TABLES = [
   'history',
   'changes',
   'meta',
+  'moves',
 ] as const;
 export type TableName = (typeof ALL_TABLES)[number];
