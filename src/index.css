@@ -1,0 +1,140 @@
+@import 'tailwindcss';
+
+/* ===== Дизайн-система PROGRESS ===== */
+@theme {
+  --color-bg: #0a0a0f;
+  --color-bg-2: #0f0f16;
+  --color-surface: #15151d;
+  --color-surface-2: #1b1b25;
+  --color-surface-3: #23232f;
+  --color-line: rgb(255 255 255 / 0.07);
+  --color-line-strong: rgb(255 255 255 / 0.12);
+  --color-ink: #f4f4f8;
+  --color-ink-2: #a9a9bb;
+  --color-ink-3: #6e6e82;
+
+  --color-accent: #7b61ff;
+  --color-accent-2: #5b8cff;
+  --color-accent-soft: rgb(123 97 255 / 0.14);
+  --color-success: #34d399;
+  --color-success-soft: rgb(52 211 153 / 0.13);
+  --color-warn: #fbbf24;
+  --color-warn-soft: rgb(251 191 36 / 0.13);
+  --color-danger: #fb5a6e;
+  --color-danger-soft: rgb(251 90 110 / 0.13);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --radius-card: 22px;
+
+  --animate-rise: rise 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-fade: fade 0.25s ease both;
+  --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+:root {
+  color-scheme: dark;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tabbar-h: 64px;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+#root {
+  min-height: 100dvh;
+  max-width: 520px;
+  margin: 0 auto;
+  position: relative;
+  background:
+    radial-gradient(120% 60% at 85% -10%, rgb(123 97 255 / 0.16), transparent 60%),
+    radial-gradient(90% 40% at -10% 0%, rgb(91 140 255 / 0.08), transparent 60%),
+    var(--color-bg);
+  background-attachment: fixed;
+}
+
+button {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+button:disabled {
+  cursor: default;
+}
+
+input,
+textarea,
+select {
+  font-size: 16px; /* без автозума на iPhone */
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.glass {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0.015));
+  border: 1px solid var(--color-line);
+}
+
+.glow-accent {
+  box-shadow: 0 10px 30px -10px rgb(123 97 255 / 0.65), inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+
+.card-accent {
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgb(123 97 255 / 0.32), transparent 55%),
+    linear-gradient(180deg, #1d1a33, #15141f);
+  border: 1px solid rgb(123 97 255 / 0.35);
+}
+
+.pt-safe {
+  padding-top: calc(var(--safe-top) + 12px);
+}
+.pb-tabbar {
+  padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 24px);
+}
+.pb-safe {
+  padding-bottom: calc(var(--safe-bottom) + 16px);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
